@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,11 +23,11 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -456,17 +456,18 @@ public class RedirectView extends AbstractUrlBasedView implements SmartView {
 		boolean first = (targetUrl.toString().indexOf('?') < 0);
 		for (Map.Entry<String, Object> entry : queryProperties(model).entrySet()) {
 			Object rawValue = entry.getValue();
-			Collection<Object> values;
+			Iterator<Object> valueIter;
 			if (rawValue != null && rawValue.getClass().isArray()) {
-				values = Arrays.asList(ObjectUtils.toObjectArray(rawValue));
+				valueIter = Arrays.asList(ObjectUtils.toObjectArray(rawValue)).iterator();
 			}
 			else if (rawValue instanceof Collection) {
-				values = ((Collection<Object>) rawValue);
+				valueIter = ((Collection<Object>) rawValue).iterator();
 			}
 			else {
-				values = Collections.singleton(rawValue);
+				valueIter = Collections.singleton(rawValue).iterator();
 			}
-			for (Object value : values) {
+			while (valueIter.hasNext()) {
+				Object value = valueIter.next();
 				if (first) {
 					targetUrl.append('?');
 					first = false;

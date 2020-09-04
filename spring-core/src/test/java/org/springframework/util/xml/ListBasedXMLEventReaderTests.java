@@ -39,6 +39,10 @@ import static javax.xml.stream.XMLStreamConstants.START_ELEMENT;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import static javax.xml.stream.XMLStreamConstants.*;
+import static org.junit.Assert.*;
+import static org.xmlunit.matchers.CompareMatcher.*;
+
 /**
  * @author Arjen Poutsma
  * @author Andrzej Hołowko
@@ -91,6 +95,40 @@ class ListBasedXMLEventReaderTests {
 		assertThatExceptionOfType(XMLStreamException.class).isThrownBy(
 				reader::getElementText)
 			.withMessageStartingWith("Not at START_ELEMENT");
+	}
+
+	@Test
+	public void testGetElementText() throws Exception {
+		String xml = "<foo><bar>baz</bar></foo>";
+		List<XMLEvent> events = readEvents(xml);
+
+		ListBasedXMLEventReader reader = new ListBasedXMLEventReader(events);
+
+		assertEquals(START_DOCUMENT, reader.nextEvent().getEventType());
+		assertEquals(START_ELEMENT, reader.nextEvent().getEventType());
+		assertEquals(START_ELEMENT, reader.nextEvent().getEventType());
+		assertEquals("baz", reader.getElementText());
+		assertEquals(END_ELEMENT, reader.nextEvent().getEventType());
+		assertEquals(END_DOCUMENT, reader.nextEvent().getEventType());
+	}
+
+	@Test
+	public void testGetElementTextThrowsExceptionAtWrongPosition() throws Exception {
+		String xml = "<foo><bar>baz</bar></foo>";
+		List<XMLEvent> events = readEvents(xml);
+
+		ListBasedXMLEventReader reader = new ListBasedXMLEventReader(events);
+
+		assertEquals(START_DOCUMENT, reader.nextEvent().getEventType());
+
+		try {
+			reader.getElementText();
+			fail("Should have thrown XMLStreamException");
+		}
+		catch (XMLStreamException ex) {
+			// expected
+			assertTrue(ex.getMessage().startsWith("Not at START_ELEMENT"));
+		}
 	}
 
 	private List<XMLEvent> readEvents(String xml) throws XMLStreamException {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package org.springframework.context.testfixture.jndi;
+package org.springframework.tests.mock.jndi;
 
 import java.util.Hashtable;
-
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.spi.InitialContextFactory;
@@ -33,10 +32,7 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * Copy of the standard {@link org.springframework.mock.jndi.SimpleNamingContextBuilder}
- * for testing purposes.
- *
- * <p>Simple implementation of a JNDI naming context builder.
+ * Simple implementation of a JNDI naming context builder.
  *
  * <p>Mainly targeted at test environments, where each test case can
  * configure JNDI appropriately, so that {@code new InitialContext()}

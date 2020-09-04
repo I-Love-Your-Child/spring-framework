@@ -27,21 +27,18 @@ import java.util.List;
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
-import org.springframework.util.StreamUtils;
 
 import static java.nio.charset.StandardCharsets.ISO_8859_1;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME;
 
 /**
- * Representation of the Content-Disposition type and parameters as defined in RFC 6266.
+ * Represent the Content-Disposition type and parameters as defined in RFC 2183.
  *
  * @author Sebastien Deleuze
  * @author Juergen Hoeller
- * @author Rossen Stoyanchev
- * @author Sergey Tsypanov
  * @since 5.0
- * @see <a href="https://tools.ietf.org/html/rfc6266">RFC 6266</a>
+ * @see <a href="https://tools.ietf.org/html/rfc2183">RFC 2183</a>
  */
 public final class ContentDisposition {
 
@@ -128,11 +125,7 @@ public final class ContentDisposition {
 
 	/**
 	 * Return the value of the {@literal size} parameter, or {@code null} if not defined.
-	 * @deprecated since 5.2.3 as per
-	 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-	 * to be removed in a future release.
 	 */
-	@Deprecated
 	@Nullable
 	public Long getSize() {
 		return this.size;
@@ -140,11 +133,7 @@ public final class ContentDisposition {
 
 	/**
 	 * Return the value of the {@literal creation-date} parameter, or {@code null} if not defined.
-	 * @deprecated since 5.2.3 as per
-	 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-	 * to be removed in a future release.
 	 */
-	@Deprecated
 	@Nullable
 	public ZonedDateTime getCreationDate() {
 		return this.creationDate;
@@ -152,11 +141,7 @@ public final class ContentDisposition {
 
 	/**
 	 * Return the value of the {@literal modification-date} parameter, or {@code null} if not defined.
-	 * @deprecated since 5.2.3 as per
-	 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-	 * to be removed in a future release.
 	 */
-	@Deprecated
 	@Nullable
 	public ZonedDateTime getModificationDate() {
 		return this.modificationDate;
@@ -164,11 +149,7 @@ public final class ContentDisposition {
 
 	/**
 	 * Return the value of the {@literal read-date} parameter, or {@code null} if not defined.
-	 * @deprecated since 5.2.3 as per
-	 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-	 * to be removed in a future release.
 	 */
-	@Deprecated
 	@Nullable
 	public ZonedDateTime getReadDate() {
 		return this.readDate;
@@ -176,7 +157,7 @@ public final class ContentDisposition {
 
 
 	@Override
-	public boolean equals(@Nullable Object other) {
+	public boolean equals(Object other) {
 		if (this == other) {
 			return true;
 		}
@@ -208,7 +189,7 @@ public final class ContentDisposition {
 	}
 
 	/**
-	 * Return the header value for this content disposition as defined in RFC 6266.
+	 * Return the header value for this content disposition as defined in RFC 2183.
 	 * @see #parse(String)
 	 */
 	@Override
@@ -388,10 +369,10 @@ public final class ContentDisposition {
 	}
 
 	/**
-	 * Decode the given header field param as described in RFC 5987.
+	 * Decode the given header field param as describe in RFC 5987.
 	 * <p>Only the US-ASCII, UTF-8 and ISO-8859-1 charsets are supported.
-	 * @param filename the filename
-	 * @param charset the charset for the filename
+	 * @param filename the header field param
+	 * @param charset the charset to use
 	 * @return the encoded header field param
 	 * @see <a href="https://tools.ietf.org/html/rfc5987">RFC 5987</a>
 	 */
@@ -399,18 +380,18 @@ public final class ContentDisposition {
 		Assert.notNull(filename, "'input' String` should not be null");
 		Assert.notNull(charset, "'charset' should not be null");
 		byte[] value = filename.getBytes(charset);
-		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		int index = 0;
 		while (index < value.length) {
 			byte b = value[index];
 			if (isRFC5987AttrChar(b)) {
-				baos.write((char) b);
+				bos.write((char) b);
 				index++;
 			}
 			else if (b == '%' && index < value.length - 2) {
 				char[] array = new char[]{(char) value[index + 1], (char) value[index + 2]};
 				try {
-					baos.write(Integer.parseInt(String.valueOf(array), 16));
+					bos.write(Integer.parseInt(String.valueOf(array), 16));
 				}
 				catch (NumberFormatException ex) {
 					throw new IllegalArgumentException(INVALID_HEADER_FIELD_PARAMETER_FORMAT, ex);
@@ -421,7 +402,7 @@ public final class ContentDisposition {
 				throw new IllegalArgumentException(INVALID_HEADER_FIELD_PARAMETER_FORMAT);
 			}
 		}
-		return StreamUtils.copyToString(baos, charset);
+		return new String(bos.toByteArray(), charset);
 	}
 
 	private static boolean isRFC5987AttrChar(byte c) {
@@ -437,12 +418,7 @@ public final class ContentDisposition {
 		boolean escaped = false;
 		StringBuilder sb = new StringBuilder();
 		for (char c : filename.toCharArray()) {
-			if (!escaped && c == '"') {
-				sb.append("\\\"");
-			}
-			else {
-				sb.append(c);
-			}
+			sb.append((c == '"' && !escaped) ? "\\\"" : c);
 			escaped = (!escaped && c == '\\');
 		}
 		// Remove backslash at the end..
@@ -519,38 +495,22 @@ public final class ContentDisposition {
 
 		/**
 		 * Set the value of the {@literal size} parameter.
-		 * @deprecated since 5.2.3 as per
-		 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-		 * to be removed in a future release.
 		 */
-		@Deprecated
 		Builder size(Long size);
 
 		/**
 		 * Set the value of the {@literal creation-date} parameter.
-		 * @deprecated since 5.2.3 as per
-		 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-		 * to be removed in a future release.
 		 */
-		@Deprecated
 		Builder creationDate(ZonedDateTime creationDate);
 
 		/**
 		 * Set the value of the {@literal modification-date} parameter.
-		 * @deprecated since 5.2.3 as per
-		 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-		 * to be removed in a future release.
 		 */
-		@Deprecated
 		Builder modificationDate(ZonedDateTime modificationDate);
 
 		/**
 		 * Set the value of the {@literal read-date} parameter.
-		 * @deprecated since 5.2.3 as per
-		 * <a href="https://tools.ietf.org/html/rfc6266#appendix-B">RFC 6266, Appendix B</a>,
-		 * to be removed in a future release.
 		 */
-		@Deprecated
 		Builder readDate(ZonedDateTime readDate);
 
 		/**
@@ -612,28 +572,24 @@ public final class ContentDisposition {
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
 		public Builder size(Long size) {
 			this.size = size;
 			return this;
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
 		public Builder creationDate(ZonedDateTime creationDate) {
 			this.creationDate = creationDate;
 			return this;
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
 		public Builder modificationDate(ZonedDateTime modificationDate) {
 			this.modificationDate = modificationDate;
 			return this;
 		}
 
 		@Override
-		@SuppressWarnings("deprecation")
 		public Builder readDate(ZonedDateTime readDate) {
 			this.readDate = readDate;
 			return this;

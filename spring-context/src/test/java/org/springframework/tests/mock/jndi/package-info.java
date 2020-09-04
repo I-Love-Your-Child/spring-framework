@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2012 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package org.springframework.web.reactive.function.server
-
-import kotlinx.coroutines.reactive.awaitSingle
-
 /**
- * Coroutines variant of [RenderingResponse.Builder.build].
+ * The simplest implementation of the JNDI SPI that could possibly work.
  *
- * @author Sebastien Deleuze
- * @since 5.2
+ * <p>Useful for setting up a simple JNDI environment for test suites
+ * or standalone applications. If e.g. JDBC DataSources get bound to the
+ * same JNDI names as within a Java EE container, both application code and
+ * configuration can me reused without changes.
  */
-suspend fun RenderingResponse.Builder.buildAndAwait(): RenderingResponse = build().awaitSingle()
+package org.springframework.tests.mock.jndi;

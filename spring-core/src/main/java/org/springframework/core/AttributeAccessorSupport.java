@@ -37,7 +37,7 @@ import org.springframework.util.StringUtils;
 @SuppressWarnings("serial")
 public abstract class AttributeAccessorSupport implements AttributeAccessor, Serializable {
 
-	/** Map with String keys and Object values. */
+	/** Map with String keys and Object values */
 	private final Map<String, Object> attributes = new LinkedHashMap<>();
 
 
@@ -92,7 +92,7 @@ public abstract class AttributeAccessorSupport implements AttributeAccessor, Ser
 
 
 	@Override
-	public boolean equals(@Nullable Object other) {
+	public boolean equals(Object other) {
 		return (this == other || (other instanceof AttributeAccessorSupport &&
 				this.attributes.equals(((AttributeAccessorSupport) other).attributes)));
 	}

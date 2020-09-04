@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.context.index.processor;
+package org.springframework.context.index;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,7 +23,6 @@ import java.util.EnumSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.annotation.processing.Completion;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.Processor;
@@ -137,7 +136,7 @@ public class CandidateComponentsIndexer implements Processor {
 		List<TypeElement> list = new ArrayList<>();
 		for (Element element : elements) {
 			if (TYPE_KINDS.contains(element.getKind()) && element.getModifiers().contains(Modifier.STATIC)) {
-				list.add((TypeElement) element);
+				list.add(TypeElement.class.cast(element));
 			}
 		}
 		return list;

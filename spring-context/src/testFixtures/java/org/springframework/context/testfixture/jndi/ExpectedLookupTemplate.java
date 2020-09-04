@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,16 @@
  * limitations under the License.
  */
 
-package org.springframework.context.testfixture.jndi;
+package org.springframework.tests.mock.jndi;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.naming.NamingException;
 
 import org.springframework.jndi.JndiTemplate;
 
 /**
- * Copy of the standard {@link org.springframework.context.testfixture.jndi.jndi.ExpectedLookupTemplate}
- * for testing purposes.
- *
- * <p>Simple extension of the JndiTemplate class that always returns a given object.
+ * Simple extension of the JndiTemplate class that always returns a given object.
  *
  * <p>Very useful for testing. Effectively a mock object.
  *

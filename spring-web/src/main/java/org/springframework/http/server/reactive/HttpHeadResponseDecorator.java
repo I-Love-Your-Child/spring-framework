@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ import reactor.core.publisher.Mono;
 
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
-import org.springframework.http.HttpHeaders;
 
 /**
  * {@link ServerHttpResponse} decorator for HTTP HEAD requests.
@@ -33,7 +32,6 @@ import org.springframework.http.HttpHeaders;
  * @since 5.0
  */
 public class HttpHeadResponseDecorator extends ServerHttpResponseDecorator {
-
 
 	public HttpHeadResponseDecorator(ServerHttpResponse delegate) {
 		super(delegate);
@@ -47,18 +45,16 @@ public class HttpHeadResponseDecorator extends ServerHttpResponseDecorator {
 	 */
 	@Override
 	public final Mono<Void> writeWith(Publisher<? extends DataBuffer> body) {
-		return Flux.from(body)
-				.reduce(0, (current, buffer) -> {
-					int next = current + buffer.readableByteCount();
-					DataBufferUtils.release(buffer);
-					return next;
-				})
-				.doOnNext(length -> {
-					if (length > 0 || getHeaders().getFirst(HttpHeaders.CONTENT_LENGTH) == null) {
-						getHeaders().setContentLength(length);
-					}
-				})
-				.then();
+		// After Reactor Netty #171 is fixed we can return without delegating
+		return getDelegate().writeWith(
+				Flux.from(body)
+						.reduce(0, (current, buffer) -> {
+							int next = current + buffer.readableByteCount();
+							DataBufferUtils.release(buffer);
+							return next;
+						})
+						.doOnNext(count -> getHeaders().setContentLength(count))
+						.then(Mono.empty()));
 	}
 
 	/**

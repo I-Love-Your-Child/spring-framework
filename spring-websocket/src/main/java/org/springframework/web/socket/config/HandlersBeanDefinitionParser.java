@@ -43,7 +43,7 @@ import org.springframework.web.socket.sockjs.support.SockJsHttpRequestHandler;
  * Parses the configuration for the {@code <websocket:handlers/>} namespace element.
  * Registers a Spring MVC {@code SimpleUrlHandlerMapping} to map HTTP WebSocket
  * handshake (or SockJS) requests to
- * {@link org.springframework.web.socket.WebSocketHandler WebSocketHandlers}.
+ * {@link org.springframework.web.socket.WebSocketHandler WebSocketHandler}s.
  *
  * @author Brian Clozel
  * @author Rossen Stoyanchev
@@ -64,7 +64,7 @@ class HandlersBeanDefinitionParser implements BeanDefinitionParser {
 		context.pushContainingComponent(compDefinition);
 
 		String orderAttribute = element.getAttribute("order");
-		int order = orderAttribute.isEmpty() ? DEFAULT_MAPPING_ORDER : Integer.parseInt(orderAttribute);
+		int order = orderAttribute.isEmpty() ? DEFAULT_MAPPING_ORDER : Integer.valueOf(orderAttribute);
 
 		RootBeanDefinition handlerMappingDef = new RootBeanDefinition(WebSocketHandlerMapping.class);
 		handlerMappingDef.setSource(source);

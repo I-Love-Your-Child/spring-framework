@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,28 @@
  * limitations under the License.
  */
 
-package org.springframework.context.testfixture.cache;
+package org.springframework.cache;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.UUID;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
-import org.springframework.cache.Cache;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.core.Is.*;
+import static org.junit.Assert.*;
 
 /**
  * @author Stephane Nicoll
  */
 public abstract class AbstractCacheTests<T extends Cache> {
+
+	@Rule
+	public final ExpectedException thrown = ExpectedException.none();
 
 	protected final static String CACHE_NAME = "testCache";
 
@@ -42,12 +46,12 @@ public abstract class AbstractCacheTests<T extends Cache> {
 
 	@Test
 	public void testCacheName() throws Exception {
-		assertThat(getCache().getName()).isEqualTo(CACHE_NAME);
+		assertEquals(CACHE_NAME, getCache().getName());
 	}
 
 	@Test
 	public void testNativeCache() throws Exception {
-		assertThat(getCache().getNativeCache()).isSameAs(getNativeCache());
+		assertSame(getNativeCache(), getCache().getNativeCache());
 	}
 
 	@Test
@@ -57,21 +61,21 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		String key = createRandomKey();
 		Object value = "george";
 
-		assertThat((Object) cache.get(key)).isNull();
-		assertThat(cache.get(key, String.class)).isNull();
-		assertThat(cache.get(key, Object.class)).isNull();
+		assertNull(cache.get(key));
+		assertNull(cache.get(key, String.class));
+		assertNull(cache.get(key, Object.class));
 
 		cache.put(key, value);
-		assertThat(cache.get(key).get()).isEqualTo(value);
-		assertThat(cache.get(key, String.class)).isEqualTo(value);
-		assertThat(cache.get(key, Object.class)).isEqualTo(value);
-		assertThat(cache.get(key, (Class<?>) null)).isEqualTo(value);
+		assertEquals(value, cache.get(key).get());
+		assertEquals(value, cache.get(key, String.class));
+		assertEquals(value, cache.get(key, Object.class));
+		assertEquals(value, cache.get(key, (Class<?>) null));
 
 		cache.put(key, null);
-		assertThat(cache.get(key)).isNotNull();
-		assertThat(cache.get(key).get()).isNull();
-		assertThat(cache.get(key, String.class)).isNull();
-		assertThat(cache.get(key, Object.class)).isNull();
+		assertNotNull(cache.get(key));
+		assertNull(cache.get(key).get());
+		assertNull(cache.get(key, String.class));
+		assertNull(cache.get(key, Object.class));
 	}
 
 	@Test
@@ -81,12 +85,11 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		String key = createRandomKey();
 		Object value = "initialValue";
 
-		assertThat(cache.get(key)).isNull();
-		assertThat(cache.putIfAbsent(key, value)).isNull();
-		assertThat(cache.get(key).get()).isEqualTo(value);
-		assertThat(cache.putIfAbsent(key, "anotherValue").get()).isEqualTo("initialValue");
-		// not changed
-		assertThat(cache.get(key).get()).isEqualTo(value);
+		assertNull(cache.get(key));
+		assertNull(cache.putIfAbsent(key, value));
+		assertEquals(value, cache.get(key).get());
+		assertEquals("initialValue", cache.putIfAbsent(key, "anotherValue").get());
+		assertEquals(value, cache.get(key).get()); // not changed
 	}
 
 	@Test
@@ -96,7 +99,7 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		String key = createRandomKey();
 		Object value = "george";
 
-		assertThat((Object) cache.get(key)).isNull();
+		assertNull(cache.get(key));
 		cache.put(key, value);
 	}
 
@@ -104,13 +107,13 @@ public abstract class AbstractCacheTests<T extends Cache> {
 	public void testCacheClear() throws Exception {
 		T cache = getCache();
 
-		assertThat((Object) cache.get("enescu")).isNull();
+		assertNull(cache.get("enescu"));
 		cache.put("enescu", "george");
-		assertThat((Object) cache.get("vlaicu")).isNull();
+		assertNull(cache.get("vlaicu"));
 		cache.put("vlaicu", "aurel");
 		cache.clear();
-		assertThat((Object) cache.get("vlaicu")).isNull();
-		assertThat((Object) cache.get("enescu")).isNull();
+		assertNull(cache.get("vlaicu"));
+		assertNull(cache.get("enescu"));
 	}
 
 	@Test
@@ -128,10 +131,10 @@ public abstract class AbstractCacheTests<T extends Cache> {
 
 		String key = createRandomKey();
 
-		assertThat((Object) cache.get(key)).isNull();
+		assertNull(cache.get(key));
 		Object value = cache.get(key, () -> returnValue);
-		assertThat(value).isEqualTo(returnValue);
-		assertThat(cache.get(key).get()).isEqualTo(value);
+		assertEquals(returnValue, value);
+		assertEquals(value, cache.get(key).get());
 	}
 
 	@Test
@@ -153,7 +156,7 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		Object value = cache.get(key, () -> {
 			throw new IllegalStateException("Should not have been invoked");
 		});
-		assertThat(value).isEqualTo(initialValue);
+		assertEquals(initialValue, value);
 	}
 
 	@Test
@@ -161,7 +164,7 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		T cache = getCache();
 
 		String key = createRandomKey();
-		assertThat((Object) cache.get(key)).isNull();
+		assertNull(cache.get(key));
 
 		try {
 			cache.get(key, () -> {
@@ -169,8 +172,8 @@ public abstract class AbstractCacheTests<T extends Cache> {
 			});
 		}
 		catch (Cache.ValueRetrievalException ex) {
-			assertThat(ex.getCause()).isNotNull();
-			assertThat(ex.getCause().getClass()).isEqualTo(UnsupportedOperationException.class);
+			assertNotNull(ex.getCause());
+			assertEquals(UnsupportedOperationException.class, ex.getCause().getClass());
 		}
 	}
 
@@ -204,8 +207,8 @@ public abstract class AbstractCacheTests<T extends Cache> {
 		}
 		latch.await();
 
-		assertThat(results.size()).isEqualTo(10);
-		results.forEach(r -> assertThat(r).isEqualTo(1)); // Only one method got invoked
+		assertEquals(10, results.size());
+		results.forEach(r -> assertThat(r, is(1))); // Only one method got invoked
 	}
 
 	protected String createRandomKey() {

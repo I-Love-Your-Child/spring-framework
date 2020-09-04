@@ -114,6 +114,17 @@ public class ResourceTransformerSupportTests {
 		return new ClassPathResource("test/" + filePath, getClass());
 	}
 
+	@Test
+	public void toAbsolutePath() {
+		String absolute = this.transformer.toAbsolutePath("img/image.png",
+				new MockHttpServletRequest("GET", "/resources/style.css"));
+		assertEquals("/resources/img/image.png", absolute);
+
+		absolute = this.transformer.toAbsolutePath("/img/image.png",
+				new MockHttpServletRequest("GET", "/resources/style.css"));
+		assertEquals("/img/image.png", absolute);
+	}
+
 
 	private static class TestResourceTransformerSupport extends ResourceTransformerSupport {
 

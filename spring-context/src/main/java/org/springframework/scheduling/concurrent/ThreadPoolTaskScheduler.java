@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,7 +61,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 
 	private volatile int poolSize = 1;
 
-	private volatile boolean removeOnCancelPolicy;
+	private volatile boolean removeOnCancelPolicy = false;
 
 	@Nullable
 	private volatile ErrorHandler errorHandler;
@@ -99,7 +99,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 			((ScheduledThreadPoolExecutor) this.scheduledExecutor).setRemoveOnCancelPolicy(removeOnCancelPolicy);
 		}
 		else if (removeOnCancelPolicy && this.scheduledExecutor != null) {
-			logger.debug("Could not apply remove-on-cancel policy - not a ScheduledThreadPoolExecutor");
+			logger.info("Could not apply remove-on-cancel policy - not a ScheduledThreadPoolExecutor");
 		}
 	}
 
@@ -122,7 +122,7 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 				((ScheduledThreadPoolExecutor) this.scheduledExecutor).setRemoveOnCancelPolicy(true);
 			}
 			else {
-				logger.debug("Could not apply remove-on-cancel policy - not a ScheduledThreadPoolExecutor");
+				logger.info("Could not apply remove-on-cancel policy - not a ScheduledThreadPoolExecutor");
 			}
 		}
 
@@ -296,6 +296,11 @@ public class ThreadPoolTaskScheduler extends ExecutorConfigurationSupport
 		if (listenableFuture != null) {
 			listenableFuture.cancel(true);
 		}
+	}
+
+	@Override
+	public boolean prefersShortLivedTasks() {
+		return true;
 	}
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2020 the original author or authors.
+ * Copyright 2002-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.springframework.beans.testfixture.beans;
+package org.springframework.tests.sample.beans;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -74,9 +75,9 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 
 	private Date date = new Date();
 
-	private Float myFloat = Float.valueOf(0.0f);
+	private Float myFloat = new Float(0.0);
 
-	private Collection<? super Object> friends = new ArrayList<>();
+	private Collection<? super Object> friends = new LinkedList<>();
 
 	private Set<?> someSet = new HashSet<>();
 
@@ -420,7 +421,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 
 
 	/**
-	 * @see org.springframework.beans.testfixture.beans.ITestBean#exceptional(Throwable)
+	 * @see org.springframework.tests.sample.beans.ITestBean#exceptional(Throwable)
 	 */
 	@Override
 	public void exceptional(Throwable t) throws Throwable {
@@ -434,7 +435,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 		throw new IOException();
 	}
 	/**
-	 * @see org.springframework.beans.testfixture.beans.ITestBean#returnsThis()
+	 * @see org.springframework.tests.sample.beans.ITestBean#returnsThis()
 	 */
 	@Override
 	public Object returnsThis() {
@@ -442,7 +443,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 	}
 
 	/**
-	 * @see org.springframework.beans.testfixture.beans.IOther#absquatulate()
+	 * @see org.springframework.tests.sample.beans.IOther#absquatulate()
 	 */
 	@Override
 	public void absquatulate() {
@@ -468,7 +469,7 @@ public class TestBean implements BeanNameAware, BeanFactoryAware, ITestBean, IOt
 		if (this == other) {
 			return true;
 		}
-		if (!(other instanceof TestBean)) {
+		if (other == null || !(other instanceof TestBean)) {
 			return false;
 		}
 		TestBean tb2 = (TestBean) other;

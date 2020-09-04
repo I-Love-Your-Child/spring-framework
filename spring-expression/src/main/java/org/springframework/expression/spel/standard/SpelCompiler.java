@@ -36,7 +36,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * A SpelCompiler will take a regular parsed expression and create (and load) a class
@@ -65,7 +64,7 @@ import org.springframework.util.StringUtils;
  * @author Andy Clement
  * @since 4.1
  */
-public final class SpelCompiler implements Opcodes {
+public class SpelCompiler implements Opcodes {
 
 	private static final Log logger = LogFactory.getLog(SpelCompiler.class);
 
@@ -182,7 +181,7 @@ public final class SpelCompiler implements Opcodes {
 		byte[] data = cw.toByteArray();
 		// TODO need to make this conditionally occur based on a debug flag
 		// dump(expressionToCompile.toStringAST(), clazzName, data);
-		return loadClass(StringUtils.replace(className, "/", "."), data);
+		return loadClass(className.replaceAll("/", "."), data);
 	}
 
 	/**
@@ -190,8 +189,8 @@ public final class SpelCompiler implements Opcodes {
 	 * because they anchor compiled classes in memory and prevent GC.  If you have expressions
 	 * continually recompiling over time then by replacing the classloader periodically
 	 * at least some of the older variants can be garbage collected.
-	 * @param name the name of the class
-	 * @param bytes the bytecode for the class
+	 * @param name name of the class
+	 * @param bytes bytecode for the class
 	 * @return the Class object for the compiled expression
 	 */
 	@SuppressWarnings("unchecked")

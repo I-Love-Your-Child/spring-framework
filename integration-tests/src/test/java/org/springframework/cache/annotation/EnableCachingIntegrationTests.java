@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2019 the original author or authors.
+ * Copyright 2002-2018 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package org.springframework.cache.annotation;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
@@ -33,8 +33,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.hamcrest.CoreMatchers.*;
+import static org.junit.Assert.*;
 
 /**
  * Integration tests for the @EnableCaching annotation.
@@ -43,45 +43,47 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
  * @since 3.1
  */
 @SuppressWarnings("resource")
-class EnableCachingIntegrationTests {
+public class EnableCachingIntegrationTests {
 
 	@Test
-	void repositoryIsClassBasedCacheProxy() {
+	public void repositoryIsClassBasedCacheProxy() {
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 		ctx.register(Config.class, ProxyTargetClassCachingConfig.class);
 		ctx.refresh();
 
 		assertCacheProxying(ctx);
-		assertThat(AopUtils.isCglibProxy(ctx.getBean(FooRepository.class))).isTrue();
+		assertThat(AopUtils.isCglibProxy(ctx.getBean(FooRepository.class)), is(true));
 	}
 
 	@Test
-	void repositoryUsesAspectJAdviceMode() {
+	public void repositoryUsesAspectJAdviceMode() {
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext();
 		ctx.register(Config.class, AspectJCacheConfig.class);
-		// this test is a bit fragile, but gets the job done, proving that an
-		// attempt was made to look up the AJ aspect. It's due to classpath issues
-		// in .integration-tests that it's not found.
-		assertThatExceptionOfType(Exception.class).isThrownBy(
-				ctx::refresh)
-			.withMessageContaining("AspectJCachingConfiguration");
+		try {
+			ctx.refresh();
+		}
+		catch (Exception ex) {
+			// this test is a bit fragile, but gets the job done, proving that an
+			// attempt was made to look up the AJ aspect. It's due to classpath issues
+			// in .integration-tests that it's not found.
+			assertTrue(ex.getMessage().contains("AspectJCachingConfiguration"));
+		}
 	}
 
 
 	private void assertCacheProxying(AnnotationConfigApplicationContext ctx) {
 		FooRepository repo = ctx.getBean(FooRepository.class);
-		assertThat(isCacheProxy(repo)).isTrue();
-	}
 
-	private boolean isCacheProxy(FooRepository repo) {
+		boolean isCacheProxy = false;
 		if (AopUtils.isAopProxy(repo)) {
 			for (Advisor advisor : ((Advised)repo).getAdvisors()) {
 				if (advisor instanceof BeanFactoryCacheOperationSourceAdvisor) {
-					return true;
+					isCacheProxy = true;
+					break;
 				}
 			}
 		}
-		return false;
+		assertTrue("FooRepository is not a cache proxy", isCacheProxy);
 	}
 
 

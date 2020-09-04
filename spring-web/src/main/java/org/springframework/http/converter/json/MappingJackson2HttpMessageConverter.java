@@ -26,7 +26,7 @@ import org.springframework.lang.Nullable;
 
 /**
  * Implementation of {@link org.springframework.http.converter.HttpMessageConverter} that can read and
- * write JSON using <a href="https://github.com/FasterXML/jackson">Jackson 2.x's</a> {@link ObjectMapper}.
+ * write JSON using <a href="https://wiki.fasterxml.com/JacksonHome">Jackson 2.x's</a> {@link ObjectMapper}.
  *
  * <p>This converter can be used to bind to typed beans, or untyped {@code HashMap} instances.
  *
@@ -91,9 +91,26 @@ public class MappingJackson2HttpMessageConverter extends AbstractJackson2HttpMes
 
 
 	@Override
+	@SuppressWarnings("deprecation")
 	protected void writePrefix(JsonGenerator generator, Object object) throws IOException {
 		if (this.jsonPrefix != null) {
 			generator.writeRaw(this.jsonPrefix);
+		}
+		String jsonpFunction =
+				(object instanceof MappingJacksonValue ? ((MappingJacksonValue) object).getJsonpFunction() : null);
+		if (jsonpFunction != null) {
+			generator.writeRaw("/**/");
+			generator.writeRaw(jsonpFunction + "(");
+		}
+	}
+
+	@Override
+	@SuppressWarnings("deprecation")
+	protected void writeSuffix(JsonGenerator generator, Object object) throws IOException {
+		String jsonpFunction =
+				(object instanceof MappingJacksonValue ? ((MappingJacksonValue) object).getJsonpFunction() : null);
+		if (jsonpFunction != null) {
+			generator.writeRaw(");");
 		}
 	}
 

@@ -17,8 +17,9 @@
 package org.springframework.util;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,13 +57,13 @@ class MultiValueMapAdapter<K, V> implements MultiValueMap<K, V>, Serializable {
 
 	@Override
 	public void add(K key, @Nullable V value) {
-		List<V> values = this.targetMap.computeIfAbsent(key, k -> new ArrayList<>(1));
+		List<V> values = this.targetMap.computeIfAbsent(key, k -> new LinkedList<>());
 		values.add(value);
 	}
 
 	@Override
 	public void addAll(K key, List<? extends V> values) {
-		List<V> currentValues = this.targetMap.computeIfAbsent(key, k -> new ArrayList<>(1));
+		List<V> currentValues = this.targetMap.computeIfAbsent(key, k -> new LinkedList<>());
 		currentValues.addAll(values);
 	}
 
@@ -75,7 +76,7 @@ class MultiValueMapAdapter<K, V> implements MultiValueMap<K, V>, Serializable {
 
 	@Override
 	public void set(K key, @Nullable V value) {
-		List<V> values = new ArrayList<>(1);
+		List<V> values = new LinkedList<>();
 		values.add(value);
 		this.targetMap.put(key, values);
 	}
@@ -87,7 +88,7 @@ class MultiValueMapAdapter<K, V> implements MultiValueMap<K, V>, Serializable {
 
 	@Override
 	public Map<K, V> toSingleValueMap() {
-		Map<K, V> singleValueMap = CollectionUtils.newLinkedHashMap(this.targetMap.size());
+		Map<K, V> singleValueMap = new LinkedHashMap<>(this.targetMap.size());
 		this.targetMap.forEach((key, values) -> {
 			if (values != null && !values.isEmpty()) {
 				singleValueMap.put(key, values.get(0));

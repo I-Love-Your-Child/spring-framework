@@ -45,7 +45,6 @@ public class DefaultEventListenerFactory implements EventListenerFactory, Ordere
 	}
 
 
-	@Override
 	public boolean supportsMethod(Method method) {
 		return true;
 	}

@@ -27,9 +27,8 @@ import org.springframework.beans.factory.BeanInitializationException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.event.SmartApplicationListener;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.lang.Nullable;
+import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHandler;
 import org.springframework.messaging.converter.ByteArrayMessageConverter;
 import org.springframework.messaging.converter.CompositeMessageConverter;
@@ -39,7 +38,6 @@ import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.messaging.converter.StringMessageConverter;
 import org.springframework.messaging.handler.invocation.HandlerMethodArgumentResolver;
 import org.springframework.messaging.handler.invocation.HandlerMethodReturnValueHandler;
-import org.springframework.messaging.simp.SimpLogging;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler;
 import org.springframework.messaging.simp.broker.AbstractBrokerMessageHandler;
@@ -54,7 +52,6 @@ import org.springframework.messaging.simp.user.UserRegistryMessageHandler;
 import org.springframework.messaging.support.AbstractSubscribableChannel;
 import org.springframework.messaging.support.ExecutorSubscribableChannel;
 import org.springframework.messaging.support.ImmutableMessageChannelInterceptor;
-import org.springframework.scheduling.TaskScheduler;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.util.Assert;
@@ -131,7 +128,6 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	@Bean
 	public AbstractSubscribableChannel clientInboundChannel() {
 		ExecutorSubscribableChannel channel = new ExecutorSubscribableChannel(clientInboundChannelExecutor());
-		channel.setLogger(SimpLogging.forLog(channel.getLogger()));
 		ChannelRegistration reg = getClientInboundChannelRegistration();
 		if (reg.hasInterceptors()) {
 			channel.setInterceptors(reg.getInterceptors());
@@ -140,7 +136,7 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	public TaskExecutor clientInboundChannelExecutor() {
+	public ThreadPoolTaskExecutor clientInboundChannelExecutor() {
 		TaskExecutorRegistration reg = getClientInboundChannelRegistration().taskExecutor();
 		ThreadPoolTaskExecutor executor = reg.getTaskExecutor();
 		executor.setThreadNamePrefix("clientInboundChannel-");
@@ -167,7 +163,6 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	@Bean
 	public AbstractSubscribableChannel clientOutboundChannel() {
 		ExecutorSubscribableChannel channel = new ExecutorSubscribableChannel(clientOutboundChannelExecutor());
-		channel.setLogger(SimpLogging.forLog(channel.getLogger()));
 		ChannelRegistration reg = getClientOutboundChannelRegistration();
 		if (reg.hasInterceptors()) {
 			channel.setInterceptors(reg.getInterceptors());
@@ -176,7 +171,7 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	public TaskExecutor clientOutboundChannelExecutor() {
+	public ThreadPoolTaskExecutor clientOutboundChannelExecutor() {
 		TaskExecutorRegistration reg = getClientOutboundChannelRegistration().taskExecutor();
 		ThreadPoolTaskExecutor executor = reg.getTaskExecutor();
 		executor.setThreadNamePrefix("clientOutboundChannel-");
@@ -206,13 +201,12 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 		ExecutorSubscribableChannel channel = (reg.hasTaskExecutor() ?
 				new ExecutorSubscribableChannel(brokerChannelExecutor()) : new ExecutorSubscribableChannel());
 		reg.interceptors(new ImmutableMessageChannelInterceptor());
-		channel.setLogger(SimpLogging.forLog(channel.getLogger()));
 		channel.setInterceptors(reg.getInterceptors());
 		return channel;
 	}
 
 	@Bean
-	public TaskExecutor brokerChannelExecutor() {
+	public ThreadPoolTaskExecutor brokerChannelExecutor() {
 		ChannelRegistration reg = getBrokerRegistry().getBrokerChannelRegistration();
 		ThreadPoolTaskExecutor executor;
 		if (reg.hasTaskExecutor()) {
@@ -298,11 +292,10 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	@Nullable
 	public AbstractBrokerMessageHandler simpleBrokerMessageHandler() {
 		SimpleBrokerMessageHandler handler = getBrokerRegistry().getSimpleBroker(brokerChannel());
 		if (handler == null) {
-			return null;
+			return new NoOpBrokerMessageHandler();
 		}
 		updateUserDestinationResolver(handler);
 		return handler;
@@ -316,11 +309,10 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	@Nullable
 	public AbstractBrokerMessageHandler stompBrokerRelayMessageHandler() {
 		StompBrokerRelayMessageHandler handler = getBrokerRegistry().getStompBrokerRelay(brokerChannel());
 		if (handler == null) {
-			return null;
+			return new NoOpBrokerMessageHandler();
 		}
 		Map<String, MessageHandler> subscriptions = new HashMap<>(4);
 		String destination = getBrokerRegistry().getUserDestinationBroadcast();
@@ -348,10 +340,9 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	@Nullable
 	public MessageHandler userRegistryMessageHandler() {
 		if (getBrokerRegistry().getUserRegistryBroadcast() == null) {
-			return null;
+			return new NoOpMessageHandler();
 		}
 		SimpUserRegistry userRegistry = userRegistry();
 		Assert.isInstanceOf(MultiServerUserRegistry.class, userRegistry, "MultiServerUserRegistry required");
@@ -362,7 +353,7 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 
 	// Expose alias for 4.1 compatibility
 	@Bean(name = {"messageBrokerTaskScheduler", "messageBrokerSockJsTaskScheduler"})
-	public TaskScheduler messageBrokerTaskScheduler() {
+	public ThreadPoolTaskScheduler messageBrokerTaskScheduler() {
 		ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
 		scheduler.setThreadNamePrefix("MessageBroker-");
 		scheduler.setPoolSize(Runtime.getRuntime().availableProcessors());
@@ -424,32 +415,15 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	}
 
 	@Bean
-	@SuppressWarnings("deprecation")
 	public SimpUserRegistry userRegistry() {
-		SimpUserRegistry registry = createLocalUserRegistry();
-		if (registry == null) {
-			registry = createLocalUserRegistry(getBrokerRegistry().getUserRegistryOrder());
-		}
-		boolean broadcast = getBrokerRegistry().getUserRegistryBroadcast() != null;
-		return (broadcast ? new MultiServerUserRegistry(registry) : registry);
+		return (getBrokerRegistry().getUserRegistryBroadcast() != null ?
+				new MultiServerUserRegistry(createLocalUserRegistry()) : createLocalUserRegistry());
 	}
 
 	/**
 	 * Create the user registry that provides access to local users.
-	 * @deprecated as of 5.1 in favor of {@link #createLocalUserRegistry(Integer)}
 	 */
-	@Deprecated
-	@Nullable
-	protected SimpUserRegistry createLocalUserRegistry() {
-		return null;
-	}
-
-	/**
-	 * Create the user registry that provides access to local users.
-	 * @param order the order to use as a {@link SmartApplicationListener}.
-	 * @since 5.1
-	 */
-	protected abstract SimpUserRegistry createLocalUserRegistry(@Nullable Integer order);
+	protected abstract SimpUserRegistry createLocalUserRegistry();
 
 	/**
 	 * Return an {@link org.springframework.validation.Validator} instance for
@@ -503,6 +477,38 @@ public abstract class AbstractMessageBrokerConfiguration implements ApplicationC
 	@Nullable
 	public Validator getValidator() {
 		return null;
+	}
+
+
+	private static class NoOpMessageHandler implements MessageHandler {
+
+		@Override
+		public void handleMessage(Message<?> message) {
+		}
+	}
+
+
+	private class NoOpBrokerMessageHandler extends AbstractBrokerMessageHandler {
+
+		public NoOpBrokerMessageHandler() {
+			super(clientInboundChannel(), clientOutboundChannel(), brokerChannel());
+		}
+
+		@Override
+		public void start() {
+		}
+
+		@Override
+		public void stop() {
+		}
+
+		@Override
+		public void handleMessage(Message<?> message) {
+		}
+
+		@Override
+		protected void handleMessageInternal(Message<?> message) {
+		}
 	}
 
 }

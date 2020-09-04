@@ -320,12 +320,6 @@ public enum HttpStatus {
 	 */
 	FAILED_DEPENDENCY(424, "Failed Dependency"),
 	/**
-	 * {@code 425 Too Early}.
-	 * @since 5.2
-	 * @see <a href="https://tools.ietf.org/html/rfc8470">RFC 8470</a>
-	 */
-	TOO_EARLY(425, "Too Early"),
-	/**
 	 * {@code 426 Upgrade Required}.
 	 * @see <a href="https://tools.ietf.org/html/rfc2817#section-6">Upgrading to TLS Within HTTP/1.1</a>
 	 */
@@ -522,7 +516,7 @@ public enum HttpStatus {
 	 */
 	@Override
 	public String toString() {
-		return this.value + " " + name();
+		return Integer.toString(this.value);
 	}
 
 
@@ -599,28 +593,13 @@ public enum HttpStatus {
 		 * @throws IllegalArgumentException if this enum has no corresponding constant
 		 */
 		public static Series valueOf(int statusCode) {
-			Series series = resolve(statusCode);
-			if (series == null) {
-				throw new IllegalArgumentException("No matching constant for [" + statusCode + "]");
-			}
-			return series;
-		}
-
-		/**
-		 * Resolve the given status code to an {@code HttpStatus.Series}, if possible.
-		 * @param statusCode the HTTP status code (potentially non-standard)
-		 * @return the corresponding {@code Series}, or {@code null} if not found
-		 * @since 5.1.3
-		 */
-		@Nullable
-		public static Series resolve(int statusCode) {
 			int seriesCode = statusCode / 100;
 			for (Series series : values()) {
 				if (series.value == seriesCode) {
 					return series;
 				}
 			}
-			return null;
+			throw new IllegalArgumentException("No matching constant for [" + statusCode + "]");
 		}
 	}
 

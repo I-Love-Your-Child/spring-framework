@@ -294,6 +294,8 @@ public class DefaultSubscriptionRegistryTests {
 
 		// Then without
 
+		// Then without
+
 		actual = this.registry.findSubscriptions(createMessage(destination));
 		assertThat(actual).isNotNull();
 		assertThat(actual.size()).isEqualTo(0);
@@ -318,6 +320,27 @@ public class DefaultSubscriptionRegistryTests {
 		assertThat(actual).isNotNull();
 		assertThat(actual.size()).isEqualTo(1);
 		assertThat(actual.get(sessionId)).isEqualTo(Collections.singletonList(subscriptionId));
+	}
+
+	@Test
+	public void registerSubscriptionWithSelectorNotSupported() {
+		String sessionId = "sess01";
+		String subscriptionId = "subs01";
+		String destination = "/foo";
+		String selector = "headers.foo == 'bar'";
+
+		this.registry.setSelectorHeaderName(null);
+		this.registry.registerSubscription(subscribeMessage(sessionId, subscriptionId, destination, selector));
+
+		SimpMessageHeaderAccessor accessor = SimpMessageHeaderAccessor.create();
+		accessor.setDestination(destination);
+		accessor.setNativeHeader("foo", "bazz");
+		Message<?> message = MessageBuilder.createMessage("", accessor.getMessageHeaders());
+
+		MultiValueMap<String, String> actual = this.registry.findSubscriptions(message);
+		assertNotNull(actual);
+		assertEquals(1, actual.size());
+		assertEquals(Collections.singletonList(subscriptionId), actual.get(sessionId));
 	}
 
 	@Test  // SPR-11931
